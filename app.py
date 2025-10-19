@@ -19,5 +19,9 @@ def main():
     repo.delreader(conn, pr)
     repo.delbook(conn, "1984", "Оруэлл")
     print(service.prosroch(conn))
+    print("книги на руках - ", service.loansreader(conn, pr))
+    print("забронированные книги - ", service.holdsreader(conn, pr))
+    print(service.search(conn, author="Достоевский"))
+    service.autosbros(conn)
     db.cl
 main()
