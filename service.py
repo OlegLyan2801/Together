@@ -63,3 +63,50 @@ def prosroch(conn):
         JOIN readers ON loans.pr = readers.pr
         WHERE date("now") > date(loans.date, "+14 day") """)
     return db_cursor.fetchall()
+
+
+def holdsreader(conn, pr):
+    db_cursor = conn.cursor()
+    db_cursor.execute("""
+    SELECT books.title, books.author, holds.date
+    FROM holds JOIN books ON holds.book_id=books.id
+    WHERE holds.pr=?
+    """, (pr,))
+    return db_cursor.fetchall()
+
+def loansreader(conn, pr):
+    db_cursor = conn.cursor()
+    db_cursor.execute("""
+    SELECT books.title, books.author, loans.date
+    FROM loans JOIN books ON loans.book_id=books.id
+    WHERE loans.pr=?
+    """, (pr,))
+
+    return db_cursor.fetchall()
+
+
+def search(conn, title=None, author=None, genre=None):
+    db_cursor = conn.cursor()
+    if genre:
+        db_cursor.execute("""
+        SELECT title, author, genre, total, free 
+        FROM books WHERE genre=?
+        """, (genre,))
+    elif author:
+        db_cursor.execute("""
+        SELECT title, author, genre, total, free 
+        FROM books WHERE author=?
+        """, (author,))
+    else:
+        db_cursor.execute("""
+        SELECT title, author, genre, total, free 
+        FROM books WHERE title=?
+        """, (title,))
+    return db_cursor.fetchall()
+
+def autosbros(conn):
+    db_cursor = conn.cursor()
+    db_cursor.execute("""
+        DELETE FROM holds
+        WHERE date("now") > date(date, "+5 day") """)
+    conn.commit()
