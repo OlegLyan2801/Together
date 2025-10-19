@@ -40,3 +40,41 @@ def delbook(conn,title,author):
     db_cursor.execute("""DELETE FROM books WHERE id=?""", (book_id,))
     conn.commit()
     print("книга удалена")
+
+
+def addreader(conn, full_name, phone, age):
+    cursor=conn.cursor()
+    pr = genpr(full_name, phone)
+    cursor.execute("""SELECT 1 FROM readers WHERE pr = ?""", (pr,))
+    if cursor.fetchone():
+        print("читатель уже существует")
+        return pr
+    cursor.execute(
+        """INSERT INTO readers (pr, full_name, phone, age) VALUES (?,?,?,?)""",
+        (pr, full_name, phone, age)
+    )
+    conn.commit()
+    print("читатель добавлен")
+    return pr
+
+def delreader(conn, pr):
+    db_cursor=conn.cursor()
+    db_cursor.execute("""
+    SELECT 1 
+    FROM loans 
+    WHERE pr=?
+    """, (pr,))
+    if db_cursor.fetchone():
+        print("у читателя есть книги")
+        return
+    db_cursor.execute("""
+    SELECT 1 
+    FROM holds 
+    WHERE pr=?
+    """, (pr,))
+    if db_cursor.fetchone():
+        print("у читателя есть брони")
+        return
+    db_cursor.execute("""DELETE FROM readers WHERE pr=?""", (pr,))
+    conn.commit()
+    print("читатель удалён")
