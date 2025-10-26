@@ -1,8 +1,9 @@
 import sqlite3
-
-db_connect=sqlite3.connect("reading.db")
-db_cursor=db_connect.cursor()
-def sozd():
+def conn():
+    db_connect=sqlite3.connect("reading.db")
+    db_cursor=db_connect.cursor()
+    return db_connect, db_cursor
+def sozd(db_cursor):
     db_cursor.execute("""CREATE TABLE IF NOT EXISTS readers(
                    pr TEXT PRIMARY KEY,
                    full_name TEXT NOT NULL,
@@ -25,7 +26,6 @@ def sozd():
                        pr TEXT NOT NULL REFERENCES readers(pr),
                        book_id INTEGER NOT NULL REFERENCES books(id),
                        date TEXT NOT NULL)""")
-def cl():
-    db_cursor.close()
-
-sozd()
+db_connect, db_cursor = conn()
+sozd(db_cursor)
+db_connect.commit()
