@@ -20,24 +20,29 @@ def addbook(conn,title,author,genre,n=1):
     conn.commit()
 
 
-
-def delbook(conn,title,author):
-    db_cursor=conn.cursor()
-    db_cursor.execute("""SELECT id FROM books WHERE title=? AND author=?""", (title, author))
-    row=db_cursor.fetchone()
+def delbook(conn, title, author):
+    db_cursor = conn.cursor()
+    db_cursor.execute("""
+        SELECT b.id, 
+               (SELECT COUNT(*) FROM loans WHERE book_id = b.id) as loan_count,
+               (SELECT COUNT(*) FROM holds WHERE book_id = b.id) as hold_count
+        FROM books b 
+        WHERE b.title = ? AND b.author = ?""", (title, author))
+    row = db_cursor.fetchone()
     if not row:
         print("книга не найдена")
         return
-    book_id = row[0]
-    db_cursor.execute("""SELECT 1 FROM loans WHERE book_id=?""", (book_id,))
-    if db_cursor.fetchone():
+    book_id, loan_count, hold_count = row
+
+    if loan_count > 0:
         print("книгу уже взяли")
         return
-    db_cursor.execute("""SELECT 1 FROM holds WHERE book_id=?""", (book_id,))
-    if db_cursor.fetchone():
+
+    if hold_count > 0:
         print("книга забронирована")
         return
-    db_cursor.execute("""DELETE FROM books WHERE id=?""", (book_id,))
+
+    db_cursor.execute("DELETE FROM books WHERE id = ?", (book_id,))
     conn.commit()
     print("книга удалена")
 
@@ -57,24 +62,26 @@ def addreader(conn, full_name, phone, age):
     print("читатель добавлен")
     return pr
 
+
 def delreader(conn, pr):
-    db_cursor=conn.cursor()
-    db_cursor.execute("""
-    SELECT 1 
-    FROM loans 
-    WHERE pr=?
-    """, (pr,))
-    if db_cursor.fetchone():
+    db_cursor = conn.cursor()
+    db_cursor.execute("""SELECT 
+               (SELECT COUNT(*) FROM loans WHERE pr = ?),
+               (SELECT COUNT(*) FROM holds WHERE pr = ?)""", (pr, pr))
+    row = db_cursor.fetchone()
+    if not row:
+        print("читатель не найден")
+        return
+    loan_count, hold_count = row
+
+    if loan_count > 0:
         print("у читателя есть книги")
         return
-    db_cursor.execute("""
-    SELECT 1 
-    FROM holds 
-    WHERE pr=?
-    """, (pr,))
-    if db_cursor.fetchone():
+
+    if hold_count > 0:
         print("у читателя есть брони")
         return
-    db_cursor.execute("""DELETE FROM readers WHERE pr=?""", (pr,))
+
+    db_cursor.execute("DELETE FROM readers WHERE pr = ?", (pr,))
     conn.commit()
     print("читатель удалён")
